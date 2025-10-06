@@ -1,0 +1,19 @@
+# Git ignore file
+
+# Build files
+build/
+.gradle/
+
+# IDE files
+.idea/
+*.iml
+
+# Log files
+*.log
+
+# Local properties
+.env
+
+# Ignore all markdown files except README.md
+*.md
+!README.md
