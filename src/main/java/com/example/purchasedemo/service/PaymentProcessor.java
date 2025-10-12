@@ -1,14 +1,12 @@
 package com.example.purchasedemo.service;
 
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.example.purchasedemo.dto.PaymentResultMessage;
 import com.example.purchasedemo.entity.Order;
 import com.example.purchasedemo.repository.OrderRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,22 +18,32 @@ public class PaymentProcessor {
     private final TossPaymentService tossPaymentService;
 
     @Transactional
-    public void processTossPaymentConfirmation(String paymentKey, String orderId, Long amount) {
-        // 1. Toss Payments에 결제 승인 요청
+    public Long processTossPaymentConfirmation(String paymentKey, String orderId, Long amount) {
+        Long originalOrderId = parseOriginalOrderId(orderId);
+
         try {
             tossPaymentService.confirmPayment(paymentKey, orderId, amount);
         } catch (Exception e) {
-            // 결제 승인 실패 시 처리
-            handlePaymentFailure(orderId, e.getMessage());
+            handlePaymentFailure(originalOrderId, "Toss Payments 승인 실패: " + e.getMessage());
             throw new RuntimeException("Toss Payments 승인 실패: " + e.getMessage(), e);
         }
 
-        // 2. 결제 승인 성공 시 후속 처리
-        handlePaymentSuccess(orderId);
+        handlePaymentSuccess(originalOrderId);
+        return originalOrderId;
     }
 
-    private void handlePaymentSuccess(String tossOrderId) {
-        Order order = findOrderByTossOrderId(tossOrderId);
+    @Transactional
+    public void processTossPaymentCancellation(String orderId, String message) {
+        Long originalOrderId = parseOriginalOrderId(orderId);
+        handlePaymentFailure(originalOrderId, "사용자 취소 또는 결제 실패: " + message);
+    }
+
+    private void handlePaymentSuccess(Long orderId) {
+        Order order = findOrderById(orderId);
+        if (!"PENDING".equals(order.getStatus())) {
+            // 이미 처리된 주문이면 중복 처리 방지
+            return;
+        }
         order.setStatus("PAID");
         orderRepository.save(order);
 
@@ -45,29 +53,32 @@ public class PaymentProcessor {
         System.out.println("결제 성공 메시지 발행: " + resultMessage);
     }
 
-    private void handlePaymentFailure(String tossOrderId, String failureMessage) {
+    private void handlePaymentFailure(Long orderId, String failureMessage) {
         try {
-            Order order = findOrderByTossOrderId(tossOrderId);
+            Order order = findOrderById(orderId);
+            if (!"PENDING".equals(order.getStatus())) {
+                // 이미 처리된 주문이면 중복 처리 방지
+                return;
+            }
             order.setStatus("FAILED");
             orderRepository.save(order);
 
-            // 재고 원복
             productService.increaseStock(order.getProduct().getId(), order.getQuantity());
 
-            PaymentResultMessage resultMessage = new PaymentResultMessage(order.getId(), "FAILED",
-                    "결제 실패: " + failureMessage);
+            PaymentResultMessage resultMessage = new PaymentResultMessage(order.getId(), "FAILED", failureMessage);
             paymentResultKafkaTemplate.send("payment-results", resultMessage);
             System.out.println("결제 실패 메시지 발행: " + resultMessage);
         } catch (Exception e) {
-            // 주문 정보를 찾지 못하는 등 후속 처리 실패 시 로깅
             System.err.println("결제 실패 후속 처리 중 오류 발생: " + e.getMessage());
         }
     }
 
-    private Order findOrderByTossOrderId(String tossOrderId) {
-        // TossOrderId 형식: "{orderId}_{timestamp}"
-        Long originalOrderId = Long.parseLong(tossOrderId.split("_")[0]);
-        return orderRepository.findById(originalOrderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + originalOrderId));
+    private Order findOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + orderId));
+    }
+
+    private Long parseOriginalOrderId(String tossOrderId) {
+        return Long.parseLong(tossOrderId.split("_")[0]);
     }
 }
