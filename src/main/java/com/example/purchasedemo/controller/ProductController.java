@@ -5,6 +5,8 @@ import com.example.purchasedemo.dto.ProductRequest;
 import com.example.purchasedemo.dto.ProductResponse;
 import com.example.purchasedemo.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -36,6 +38,14 @@ public class ProductController {
     public ResponseEntity<ApiResponse<ProductResponse>> getProductById(@PathVariable Long id) {
         ProductResponse productResponse = productService.getProductById(id);
         return ResponseEntity.ok(ApiResponse.success("Product retrieved successfully!", productResponse));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<ProductResponse>>> searchProducts(
+            @RequestParam(required = false) String keyword,
+            Pageable pageable) {
+        Page<ProductResponse> productResponses = productService.searchProducts(keyword, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Products retrieved successfully!", productResponses));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
