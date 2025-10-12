@@ -12,14 +12,14 @@ public class KakaoMessageDto {
     @AllArgsConstructor
     public static class Default {
         @JsonProperty("object_type")
-        private String objectType = "text";
+        private String objectType;
 
         private String text;
 
         private Link link;
 
         @JsonProperty("button_title")
-        private String buttonTitle = "주문내역 확인";
+        private String buttonTitle;
     }
 
     @Getter
@@ -27,9 +27,9 @@ public class KakaoMessageDto {
     @AllArgsConstructor
     public static class Link {
         @JsonProperty("web_url")
-        private String webUrl = "http://localhost:8080";
+        private String webUrl;
 
         @JsonProperty("mobile_web_url")
-        private String mobileWebUrl = "http://localhost:8080";
+        private String mobileWebUrl;
     }
 }

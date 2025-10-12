@@ -40,7 +40,16 @@ spring:
       properties:
         spring.json.trusted.packages: "com.example.purchasedemo.dto.*"
 
+toss:
+  api:
+    url: https://api.tosspayments.com/v1/payments
+  redirect:
+    base-url: http://localhost:8080
+
 kakao:
   api:
     url: https://kapi.kakao.com/v2/api/talk/memo/default/send # 테스트용 나에게 보내기 API URL
     token: "${KAKAO_TOKEN}" # .env 파일의 KAKAO_TOKEN 변수를 참조합니다.
+  link:
+    web-url: http://localhost:8080 # 실제 서비스에서는 프론트엔드 주소로 변경
+    mobile-web-url: http://localhost:8080 # 실제 서비스에서는 프론트엔드 주소로 변경
