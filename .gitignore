@@ -3,6 +3,7 @@
 # Build files
 build/
 .gradle/
+bin/
 
 # IDE files
 .idea/
