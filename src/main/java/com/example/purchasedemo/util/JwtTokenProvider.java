@@ -1,5 +1,6 @@
 package com.example.purchasedemo.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -41,7 +42,6 @@ public class JwtTokenProvider {
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
-
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMilliseconds);
         log.info("validityInMilliseconds: " + validityInMilliseconds);

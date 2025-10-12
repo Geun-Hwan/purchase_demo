@@ -27,7 +27,7 @@ public class TossPaymentService {
         TossPaymentRequest requestDto = new TossPaymentRequest(
                 "카드", // 예시: 결제 수단
                 order.getTotalPrice().longValue(),
-                order.getId().toString(),
+                order.getId().toString() + "_" + System.currentTimeMillis(),
                 order.getProduct().getName(),
                 "http://localhost:8080/api/v1/payments/success", // 성공 URL
                 "http://localhost:8080/api/v1/payments/fail" // 실패 URL

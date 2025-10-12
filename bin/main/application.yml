@@ -39,3 +39,8 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "com.example.purchasedemo.dto.*"
+
+kakao:
+  api:
+    url: https://kapi.kakao.com/v2/api/talk/memo/default/send # 테스트용 나에게 보내기 API URL
+    token: "${KAKAO_TOKEN}" # .env 파일의 KAKAO_TOKEN 변수를 참조합니다.
