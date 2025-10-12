@@ -37,16 +37,17 @@ public class Order {
     private LocalDateTime orderDate;
 
     @Setter // Setter for status
+    @Enumerated(EnumType.STRING) // Enum 값을 문자열로 DB에 저장
     @Column(nullable = false)
-    private String status; // PENDING, COMPLETED, FAILED
+    private OrderStatus status;
 
     @Builder
-    public Order(User user, Product product, Integer quantity, Double totalPrice, LocalDateTime orderDate, String status) {
+    public Order(User user, Product product, Integer quantity, Double totalPrice, LocalDateTime orderDate, OrderStatus status) {
         this.user = user;
         this.product = product;
         this.quantity = quantity;
         this.totalPrice = totalPrice;
         this.orderDate = orderDate;
-        this.status = status != null ? status : "PENDING"; // Default status
+        this.status = status != null ? status : OrderStatus.PENDING; // Default status
     }
 }
