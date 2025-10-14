@@ -5,12 +5,13 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter; // Import Setter
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Setter
 @Table(name = "orders")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order {
@@ -36,18 +37,21 @@ public class Order {
     @Column(nullable = false)
     private LocalDateTime orderDate;
 
-    @Setter // Setter for status
-    @Enumerated(EnumType.STRING) // Enum 값을 문자열로 DB에 저장
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status;
 
+    private String paymentKey; // 결제 고유 키
+
     @Builder
-    public Order(User user, Product product, Integer quantity, Double totalPrice, LocalDateTime orderDate, OrderStatus status) {
+    public Order(Long id, User user, Product product, Integer quantity, Double totalPrice, LocalDateTime orderDate, OrderStatus status, String paymentKey) {
+        this.id = id;
         this.user = user;
         this.product = product;
         this.quantity = quantity;
         this.totalPrice = totalPrice;
         this.orderDate = orderDate;
         this.status = status != null ? status : OrderStatus.PENDING; // Default status
+        this.paymentKey = paymentKey;
     }
 }

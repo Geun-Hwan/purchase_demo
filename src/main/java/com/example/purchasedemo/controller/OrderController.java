@@ -27,7 +27,7 @@ public class OrderController {
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@RequestBody OrderRequest orderRequest) {
-        OrderResponse createdOrder = orderService.createOrder(orderRequest);
+        OrderResponse createdOrder = orderService.createOrderAndInitiatePayment(orderRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Order created successfully!", createdOrder));
     }
 

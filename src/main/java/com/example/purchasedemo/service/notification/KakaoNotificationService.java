@@ -16,7 +16,7 @@ import org.springframework.web.client.RestTemplate;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class KakaoNotificationService implements NotificationService {
+public class KakaoNotificationService implements NotificationInterface {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -57,8 +57,7 @@ public class KakaoNotificationService implements NotificationService {
                 "text",
                 notificationText,
                 link,
-                "주문내역 확인"
-        );
+                "주문내역 확인");
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         try {

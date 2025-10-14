@@ -34,7 +34,7 @@ public class PaymentController {
             @RequestParam("message") String message,
             @RequestParam("orderId") String orderId) {
         
-        paymentProcessor.processTossPaymentCancellation(orderId, message);
+        paymentProcessor.processTossPaymentFailure(orderId, message);
         
         return ResponseEntity.badRequest().body(ApiResponse.error("결제에 실패했습니다: " + message));
     }

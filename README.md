@@ -17,7 +17,7 @@
 ## 사용 기술
 
 - **백엔드**: Java 21, Spring Boot, Spring Security, Spring Data JPA
-- **데이터베이스**: 로컬 개발 환경을 위한 데이터베이스 (예: H2, PostgreSQL 등)
+- **데이터베이스**: 로컬 개발 환경을 위한 데이터베이스 (예: H2, Mysql 등)
 - **메시징 큐**: Apache Kafka (로컬 환경)
 - **캐시**: Redis (로컬 환경)
 - **결제 연동**: Toss Payments API
@@ -28,7 +28,6 @@
 
 ### 전제 조건
 
-- Java 17
 - Docker 및 Docker Compose
 
 ### 설치 및 실행
@@ -50,7 +49,7 @@
     ```bash
     ./gradlew bootRun
     ```
-    **참고**: Gradle로 실행 시, Redis, 데이터베이스, Kafka는 로컬에 설치되어 있어야 합니다.
+    **참고**: Gradle로 실행 시, Java , Redis, mysql, Kafka는 로컬에 설치되어 있어야 합니다.
 
 ## API 엔드포인트 (주요 컨트롤러)
 

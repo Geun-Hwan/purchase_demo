@@ -1,9 +1,10 @@
 package com.example.purchasedemo.service.notification;
 
-public interface NotificationService {
+public interface NotificationInterface {
 
     /**
      * 결제 성공 알림을 전송합니다.
+     * 
      * @param orderId 주문 ID
      * @param message 알림 메시지
      */
@@ -11,6 +12,7 @@ public interface NotificationService {
 
     /**
      * 결제 실패 알림을 전송합니다.
+     * 
      * @param orderId 주문 ID
      * @param message 알림 메시지
      */

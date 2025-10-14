@@ -31,7 +31,8 @@ public class User {
     private Set<String> roles = new HashSet<>();
 
     @Builder
-    public User(String username, String password, Set<String> roles) {
+    public User(Long id, String username, String password, Set<String> roles) {
+        this.id = id;
         this.username = username;
         this.password = password;
         this.roles = roles;

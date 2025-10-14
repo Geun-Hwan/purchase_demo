@@ -15,9 +15,7 @@ import com.example.purchasedemo.repository.OrderRepository;
 import com.example.purchasedemo.repository.UserRepository;
 import com.example.purchasedemo.service.payment.PaymentGateway;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -38,77 +36,71 @@ public class OrderService {
   private final RedissonClient redissonClient;
 
   @Transactional
-  public OrderResponse createOrder(OrderRequest orderRequest) {
-    String username = SecurityContextHolder.getContext()
-        .getAuthentication()
-        .getName();
-    User user = userRepository
-        .findByUsername(username)
+  public OrderResponse createOrderAndInitiatePayment(OrderRequest orderRequest) {
+    Order pendingOrder = createPendingOrder(orderRequest);
+    return initiatePayment(pendingOrder);
+  }
+
+  private Order createPendingOrder(OrderRequest orderRequest) {
+    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    User user = userRepository.findByUsername(username)
         .orElseThrow(() -> new UserNotFoundException("User not found: " + username));
 
-    RLock lock = redissonClient.getLock(
-        "product_lock:" + orderRequest.getProductId());
+    RLock lock = redissonClient.getLock("product_lock:" + orderRequest.getProductId());
     try {
       boolean isLocked = lock.tryLock(5, 10, TimeUnit.SECONDS);
       if (!isLocked) {
-        throw new IllegalStateException(
-            "Could not acquire lock for product " +
-                orderRequest.getProductId());
+        throw new IllegalStateException("Could not acquire lock for product " + orderRequest.getProductId());
       }
 
-      Product product = productService.getProductEntityById(
-          orderRequest.getProductId());
-
-      productService.decreaseStock(
-          product.getId(),
-          orderRequest.getQuantity());
+      Product product = productService.getProductEntityById(orderRequest.getProductId());
+      productService.decreaseStock(product.getId(), orderRequest.getQuantity());
 
       Double totalPrice = product.getPrice() * orderRequest.getQuantity();
 
-      Order order = Order
-          .builder()
+      Order order = Order.builder()
           .user(user)
           .product(product)
           .quantity(orderRequest.getQuantity())
           .totalPrice(totalPrice)
           .orderDate(LocalDateTime.now())
-          .status(OrderStatus.PENDING) // 초기 상태는 PENDING
+          .status(OrderStatus.PENDING)
           .build();
 
-      Order savedOrder = orderRepository.save(order);
+      return orderRepository.save(order);
 
-      try {
-          TossPaymentResponse tossPaymentResponse = paymentGateway.requestPayment(savedOrder); // 결제 요청
-          String paymentUrl = tossPaymentResponse.getCheckoutUrl();
-
-          // 결제 요청이 성공적으로 이루어져 paymentUrl을 받아온 직후 상태를 PROCESSING으로 변경
-          savedOrder.setStatus(OrderStatus.PROCESSING);
-          orderRepository.save(savedOrder); // 상태 업데이트
-
-        return new OrderResponse(
-            savedOrder.getId(),
-            savedOrder.getUser().getUsername(),
-            savedOrder.getProduct().getName(),
-            savedOrder.getQuantity(),
-            savedOrder.getTotalPrice(),
-            savedOrder.getOrderDate(),
-            savedOrder.getStatus(), // 현재 상태 (PROCESSING)
-            paymentUrl);
-      } catch (Exception e) {
-        // 결제 요청 실패 시 주문 상태를 FAILED로 변경하고 재고 복구
-        savedOrder.setStatus(OrderStatus.FAILED);
-        orderRepository.save(savedOrder);
-        productService.increaseStock(savedOrder.getProduct().getId(), savedOrder.getQuantity());
-        throw new PaymentException("결제 요청 중 오류 발생: " + e.getMessage(), e);
-      }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      throw new IllegalStateException(
-          "Thread was interrupted while acquiring lock");
+      throw new IllegalStateException("Thread was interrupted while acquiring lock");
     } finally {
       if (lock.isLocked() && lock.isHeldByCurrentThread()) {
         lock.unlock();
       }
+    }
+  }
+
+  private OrderResponse initiatePayment(Order order) {
+    try {
+      TossPaymentResponse tossPaymentResponse = paymentGateway.requestPayment(order);
+      String paymentUrl = tossPaymentResponse.getCheckoutUrl();
+
+      order.setStatus(OrderStatus.PROCESSING);
+      // createPendingOrder와 같은 트랜잭션이므로 save 호출은 불필요할 수 있으나, 명시적으로 상태 변경을 저장하기 위해 유지
+      orderRepository.save(order);
+
+      return new OrderResponse(
+          order.getId(),
+          order.getUser().getUsername(),
+          order.getProduct().getName(),
+          order.getQuantity(),
+          order.getTotalPrice(),
+          order.getOrderDate(),
+          order.getStatus(),
+          paymentUrl);
+    } catch (Exception e) {
+      // 이 예외 처리 블록은 createOrderAndInitiatePayment의 트랜잭션 롤백을 유발
+      productService.increaseStock(order.getProduct().getId(), order.getQuantity());
+      throw new PaymentException("결제 요청 중 오류 발생: " + e.getMessage(), e);
     }
   }
 

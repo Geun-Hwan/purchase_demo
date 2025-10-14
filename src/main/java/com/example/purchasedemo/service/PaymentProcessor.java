@@ -1,5 +1,6 @@
 package com.example.purchasedemo.service;
 
+import com.example.purchasedemo.config.KafkaTopics;
 import com.example.purchasedemo.dto.PaymentResultMessage;
 import com.example.purchasedemo.entity.Order;
 import com.example.purchasedemo.entity.OrderStatus;
@@ -38,9 +39,15 @@ public class PaymentProcessor {
     }
 
     @Transactional
+    public void processTossPaymentFailure(String orderId, String message) {
+        Long originalOrderId = parseOriginalOrderId(orderId);
+        handlePaymentFailure(originalOrderId, "Toss Payments 결제 실패: " + message);
+    }
+
+    @Transactional
     public void processTossPaymentCancellation(String orderId, String message) {
         Long originalOrderId = parseOriginalOrderId(orderId);
-        // handlePaymentFailure 대신 CANCELLED 상태로 직접 처리
+        // CANCELLED 상태로 직접 처리
         Order order = findOrderById(originalOrderId);
         if (OrderStatus.COMPLETED.equals(order.getStatus())) {
             // 이미 결제 완료된 주문을 취소하는 경우 (환불 로직 필요)
@@ -60,7 +67,7 @@ public class PaymentProcessor {
         }
 
         PaymentResultMessage resultMessage = new PaymentResultMessage(order.getId(), OrderStatus.CANCELLED, "결제가 사용자 요청으로 취소되었습니다: " + message);
-        paymentResultKafkaTemplate.send("payment-results", resultMessage);
+        paymentResultKafkaTemplate.send(KafkaTopics.PAYMENT_RESULTS, resultMessage);
         log.info("결제 취소 메시지 발행: {}", resultMessage);
     }
 
@@ -75,11 +82,11 @@ public class PaymentProcessor {
 
         PaymentResultMessage resultMessage = new PaymentResultMessage(order.getId(), OrderStatus.COMPLETED,
                 "결제가 성공적으로 완료되었습니다.");
-        paymentResultKafkaTemplate.send("payment-results", resultMessage);
+        paymentResultKafkaTemplate.send(KafkaTopics.PAYMENT_RESULTS, resultMessage);
         log.info("결제 성공 메시지 발행: {}", resultMessage);
     }
 
-    private void handlePaymentFailure(Long orderId, String failureMessage) {
+    public void handlePaymentFailure(Long orderId, String failureMessage) {
         try {
             Order order = findOrderById(orderId);
             if (!OrderStatus.PENDING.equals(order.getStatus()) && !OrderStatus.PROCESSING.equals(order.getStatus())) { // PROCESSING 상태도 추가
@@ -92,7 +99,7 @@ public class PaymentProcessor {
             productService.increaseStock(order.getProduct().getId(), order.getQuantity());
 
             PaymentResultMessage resultMessage = new PaymentResultMessage(order.getId(), OrderStatus.FAILED, failureMessage);
-            paymentResultKafkaTemplate.send("payment-results", resultMessage);
+            paymentResultKafkaTemplate.send(KafkaTopics.PAYMENT_RESULTS, resultMessage);
             log.info("결제 실패 메시지 발행: {}", resultMessage);
         } catch (Exception e) {
             log.error("결제 실패 후속 처리 중 오류 발생: Order ID - {}", orderId, e);
