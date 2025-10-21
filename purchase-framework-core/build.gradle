@@ -1,0 +1,14 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    implementation platform('org.springframework.boot:spring-boot-dependencies:3.2.0') // Use platform for dependency management
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.security:spring-security-core'
+    compileOnly 'org.projectlombok:lombok:1.18.30' // Explicitly add Lombok version
+    annotationProcessor 'org.projectlombok:lombok:1.18.30' // Explicitly add Lombok version
+
+    
+}

@@ -52,9 +52,10 @@ services:
       timeout: 5s
       retries: 5
 
-  purchase-demo-app:
+  purchase-framework-app: # Changed service name
     build: .
-    container_name: purchase-demo-app
+    image: purchase-framework-app # Explicitly set image name
+    container_name: purchase-framework-app # Changed container name
     ports:
       - "8080:8080"
     depends_on:

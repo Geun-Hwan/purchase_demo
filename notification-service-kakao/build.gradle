@@ -1,0 +1,12 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    implementation platform('org.springframework.boot:spring-boot-dependencies:3.2.0') // Use platform for dependency management
+    implementation project(':purchase-framework-core')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    compileOnly 'org.projectlombok:lombok:1.18.30' // Explicitly add Lombok version
+    annotationProcessor 'org.projectlombok:lombok:1.18.30' // Explicitly add Lombok version
+}

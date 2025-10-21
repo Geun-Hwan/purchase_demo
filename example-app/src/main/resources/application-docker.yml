@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:mysql://mysql:3306/purchasedb?useSSL=false&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: user
+    password: password
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  kafka:
+    bootstrap-servers: kafka:9092
+
+  data: # Added Redis configuration for Docker
+    redis:
+      host: redis
+      port: 6379
+
+toss: # Added Toss configuration for Docker
+  api:
+    url: https://api.tosspayments.com/v1/payments
+  redirect:
+    base-url: http://localhost:8080 # Internal Docker service name
+
+kakao: # Added Kakao configuration for Docker
+  api:
+    url: https://kapi.kakao.com/v2/api/talk/memo/default/send
+    token: "${KAKAO_TOKEN}" # KAKAO_TOKEN will be passed via environment variable
+  link:
+    web-url: http://localhost:8080
+    mobile-web-url: http://localhost:8080
+
+logging: # Added logging for debug
+  level:
+    org.springframework.boot.autoconfigure.condition: DEBUG

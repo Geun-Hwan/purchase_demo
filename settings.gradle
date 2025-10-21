@@ -1,0 +1,6 @@
+rootProject.name = 'purchase-framework'
+
+include 'purchase-framework-core'
+include 'payment-gateway-toss'
+include 'notification-service-kakao'
+include 'example-app' // A sample application using the framework
